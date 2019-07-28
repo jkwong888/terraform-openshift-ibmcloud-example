@@ -19,7 +19,7 @@ variable "public_ssh_key" {
 }
 
 variable "bastion_ssh_key_file" {
-    default = "~/.ssh/id_rsa"
+    default = "~/.ssh/openshift_rsa"
 }
 
 variable "vlan_count" {
@@ -34,41 +34,6 @@ variable "private_vlanid" {
     default = ""
 }
 
-variable "bastion_flavor" {
-    default = "B1_4X16X100"
-}
-
-variable "master_flavor" {
-    default = "B1_4X16X100"
-}
-
-variable "infra_flavor" {
-    default = "B1_4X16X100"
-}
-
-variable "app_flavor" {
-    default = "B1_4X16X100"
-}
-
-variable "storage_flavor" {
-    default = "B1_4X16X100"
-}
-
-variable "master_count" {
-    default = 3
-}
-
-variable "infra_count" {
-    default = 3
-}
-
-variable "app_count" {
-    default = 3
-}
-
-variable "storage_count" {
-    default = 3
-}
 
 variable "hourly_billing" {
     default = "true"
@@ -78,14 +43,12 @@ variable "rhn_username" {}
 variable "rhn_password" {}
 variable "rhn_poolid" {}
 
-variable "cloudflare_dns" {
-    default = false
+variable "dnscerts" {
+    default = "false"
 }
+
 variable "cloudflare_email" {}
 variable "cloudflare_token" {}
-variable "letsencrypt" {
-    default = false
-}
 variable "master_cname" {}
 variable "app_cname" {}
 variable "letsencrypt_email" {}
@@ -123,4 +86,83 @@ variable "image_registry_password" {
 
 variable "registry_volume_size" {
     default = "100"
+}
+
+variable "openshift_vm_admin_user" {
+    default = "root"
+}
+
+variable "bastion" {
+  type = "map"
+    default = {
+      nodes  = "1"
+      vcpu   = "2"
+      memory = "8192"
+      disk_size             = "100"      # Specify size or leave empty to use same size as template.
+      datastore_disk_size   = "50"    # Specify size datastore directory, default 50.
+    }
+}
+
+variable "master" {
+  type = "map"
+    default = {
+    nodes  = "1"
+    vcpu   = "4"
+    memory = "16384"
+    disk_size             = "100"      # Specify size or leave empty to use same size as template.
+    docker_disk_size      = "100"   # Specify size for docker disk, default 100.
+    docker_disk_device    = "/dev/xvdc"
+    datastore_disk_size   = "50"    # Specify size datastore directory, default 50.
+    datastore_etcd_size   = "50"    # Specify size etcd datastore directory, default 50.
+  }
+}
+
+variable "infra" {
+  type = "map"
+    default = {
+    nodes  = "1"
+    vcpu   = "4"
+    memory = "16384"
+    disk_size           = "100"      # Specify size or leave empty to use same size as template.
+    docker_disk_size    = "100"   # Specify size for docker disk, default 100.
+    docker_disk_device  = "/dev/xvdc"
+  }
+}
+
+variable "worker" {
+  type = "map"
+    default = {
+    nodes  = "1"
+    vcpu   = "4"
+    memory = "16384"
+    disk_size           = "100"      # Specify size or leave empty to use same size as template.
+    docker_disk_size    = "100"   # Specify size for docker disk, default 100.
+    docker_disk_device  = "/dev/xvdc"
+  }
+}
+
+variable "storage" {
+  type = "map"
+    default = {
+    nodes  = "3"
+    vcpu   = "4"
+    memory = "16384"
+    disk_size           = "100"      # Specify size or leave empty to use same size as template.
+    docker_disk_size    = "100"   # Specify size for docker disk, default 100.
+    docker_disk_device  = "/dev/xvdc"
+    gluster_disk_size   = "250"
+    gluster_disk_device = "/dev/xvde"
+  }
+}
+
+variable "cloudprovider" {
+    default = "ibm"
+}
+
+variable "haproxy" {
+    default = false
+}
+
+variable "ssh_user" {
+  default = "root"
 }
