@@ -20,16 +20,16 @@ module "infrastructure" {
     vlan_count            = "${var.vlan_count}"
     public_vlanid         = "${var.public_vlanid}"
     private_vlanid        = "${var.private_vlanid}"
+    bastion_flavor        = "${var.bastion_flavor}"
+    master_flavor         = "${var.master_flavor}"
+    infra_flavor          = "${var.infra_flavor}"
+    app_flavor            = "${var.app_flavor}"
+    storage_flavor        = "${var.storage_flavor}"
     private_ssh_key       = "${var.private_ssh_key}"
     ssh_public_key        = "${var.public_ssh_key}"
     bastion_ssh_key_file  = "${var.bastion_ssh_key_file}"
     hourly_billing        = "${var.hourly_billing}"
     os_reference_code     = "${var.os_reference_code}"
-    bastion               = "${var.bastion}"
-    master                = "${var.master}"
-    infra                 = "${var.infra}"
-    worker                = "${var.worker}"
-    storage               = "${var.storage}"
 }
 ```
 
@@ -217,5 +217,3 @@ $ oc get routes -n openshift-console
 NAME      HOST/PORT                              PATH      SERVICES   PORT      TERMINATION          WILDCARD
 console   console.apps-ibm-96274e13.ncolon.xyz             console    https     reencrypt/Redirect   None
 ```
-
-Credentials for this example are `admin:admin`
