@@ -11,15 +11,11 @@ variable "hostname_prefix" {
 }
 
 variable "private_ssh_key" {
-    default = "~/.ssh/id_rsa"
+    default = "~/.ssh/openshift_rsa"
 }
 
 variable "public_ssh_key" {
-    default = "~/.ssh/id_rsa.pub"
-}
-
-variable "bastion_ssh_key_file" {
-    default = "~/.ssh/openshift_rsa"
+    default = "~/.ssh/openshift_rsa.pub"
 }
 
 variable "vlan_count" {
@@ -94,26 +90,24 @@ variable "openshift_vm_admin_user" {
 
 variable "bastion" {
   type = "map"
-    default = {
-      nodes  = "1"
-      vcpu   = "2"
-      memory = "8192"
-      disk_size             = "100"      # Specify size or leave empty to use same size as template.
-      datastore_disk_size   = "50"    # Specify size datastore directory, default 50.
-    }
+  default = {
+    nodes  = "1"
+    vcpu   = "2"
+    memory = "8192"
+    disk_size             = "100"      # Specify size or leave empty to use same size as template.
+    datastore_disk_size   = "50"    # Specify size datastore directory, default 50.
+  }
 }
 
 variable "master" {
   type = "map"
     default = {
     nodes  = "1"
-    vcpu   = "4"
-    memory = "16384"
+    vcpu   = "8"
+    memory = "32768"
     disk_size             = "100"      # Specify size or leave empty to use same size as template.
     docker_disk_size      = "100"   # Specify size for docker disk, default 100.
     docker_disk_device    = "/dev/xvdc"
-    datastore_disk_size   = "50"    # Specify size datastore directory, default 50.
-    datastore_etcd_size   = "50"    # Specify size etcd datastore directory, default 50.
   }
 }
 
@@ -121,8 +115,8 @@ variable "infra" {
   type = "map"
     default = {
     nodes  = "1"
-    vcpu   = "4"
-    memory = "16384"
+    vcpu   = "8"
+    memory = "32768"
     disk_size           = "100"      # Specify size or leave empty to use same size as template.
     docker_disk_size    = "100"   # Specify size for docker disk, default 100.
     docker_disk_device  = "/dev/xvdc"
@@ -133,8 +127,8 @@ variable "worker" {
   type = "map"
     default = {
     nodes  = "1"
-    vcpu   = "4"
-    memory = "16384"
+    vcpu   = "8"
+    memory = "32768"
     disk_size           = "100"      # Specify size or leave empty to use same size as template.
     docker_disk_size    = "100"   # Specify size for docker disk, default 100.
     docker_disk_device  = "/dev/xvdc"
@@ -145,7 +139,7 @@ variable "storage" {
   type = "map"
     default = {
     nodes  = "3"
-    vcpu   = "4"
+    vcpu   = "8"
     memory = "16384"
     disk_size           = "100"      # Specify size or leave empty to use same size as template.
     docker_disk_size    = "100"   # Specify size for docker disk, default 100.
@@ -155,14 +149,36 @@ variable "storage" {
   }
 }
 
-variable "cloudprovider" {
-    default = "ibm"
+variable "haproxy" {
+  type = "map"
+  default = {
+    nodes               = "0"
+    vcpu                = "2"
+    memory              = "8192"
+    disk_size           = "100"      # Specify size or leave empty to use same size as template.
+  }
 }
 
-variable "haproxy" {
-    default = false
+variable "cloudprovider" {
+  default = "ibm"
 }
 
 variable "ssh_user" {
   default = "root"
+}
+
+variable "network_cidr" {
+    default = "10.128.0.0/14"
+}
+
+variable "service_network_cidr" {
+    default = "172.30.0.0/16"
+}
+
+variable "host_subnet_length" {
+    default = 9
+}
+
+variable "storageprovider" {
+    default = "glusterfs"
 }
