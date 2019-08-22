@@ -1,13 +1,13 @@
-# terraform-openshift-example
+# terraform-openshift-ibmcloud-example
 
 Sample terraform project leveraging multiple modules to deploy OpenShift into an user provided infrastructure.
 
-In this example, we'll use IBM Cloud and OpenShift 3.11. `example.tfvars` shows variables that can be passed to the whole project to build an OpenShift environment.
+In this example, we'll deploy OpenShift 3.11 to IBM Cloud IaaS. `terraform.tfvars` shows variables that can be passed to the whole project to build an OpenShift environment.
 
 
 ### Step 1:  Build infrastructure
 
-Fork the [terraform-openshift-ibminfra](https://github.ibm.com/ncolon/terraform-openshift-ibminfra) module and include it in your terraform `main.tf` file.
+Fork the [terraform-openshift-ibminfra](https://github.ibm.com/ncolon/terraform-openshift-ibminfra) module and include it in your terraform `main.tf` file.  Details on the variables used are found in this module's github.
 
 ```terraform
 resource "random_id" "tag" {
@@ -26,7 +26,6 @@ module "infrastructure" {
   private_vlanid        = "${var.private_vlanid}"
   private_ssh_key       = "${var.private_ssh_key}"
   ssh_public_key        = "${var.public_ssh_key}"
-  private_ssh_key       = "${var.private_ssh_key}"
   hourly_billing        = "${var.hourly_billing}"
   os_reference_code     = "${var.os_reference_code}"
   master                = "${var.master}"
@@ -45,7 +44,7 @@ $ terraform apply -target=module.infrastructure
 
 ### Step 2: Register VMs with RedHat Satelite
 
-Fork the [terraform-openshift-rhnregister](https://github.ibm.com/ncolon/terraform-openshift-rhnregister) module and include it in your `main.tf` file.  It will pull necessary information from the infrastructure module above.
+Fork the [terraform-openshift-rhnregister](https://github.ibm.com/ncolon/terraform-openshift-rhnregister) module and include it in your `main.tf` file.  It will pull necessary information from the infrastructure module above. Details on the variables used are found in this module's github.
 
 You need to provide your own RedHat username (`rhn_username`) and password (`rhn_password`), as well as the OpenShift Subscription Pool (`rhn_poolid`) to draw licenses from.
 
@@ -82,7 +81,7 @@ $ terraform apply -target=module.rhnregister
 ### Step 3: Register your infrastructure DNS.
 OpenShift depends heavily on DNS.  We'll use cloudflare for DNS registrar and Letsencrypt for SSL certificates
 
-Fork the [terraform-openshift-dnscerts](https://github.ibm.com/ncolon/terraform-openshift-ibminfra) and [terraform-dns-etc-hosts](https://github.ibm.com/ncolon/terraform-dns-etc-hosts) and include them in your `main.tf` file. It will pull necessary information from the infrastructure module above.
+Fork the [terraform-openshift-dnscerts](https://github.ibm.com/ncolon/terraform-openshift-ibminfra) and [terraform-dns-etc-hosts](https://github.ibm.com/ncolon/terraform-dns-etc-hosts) and include them in your `main.tf` file. It will pull necessary information from the infrastructure module above. Details on the variables used are found in this module's github.
 
 The certificate module currently requires the cloudflare_email and cloudflare_token to be passed thru variables.  It will be converted to CLOUDFLARE_EMAIL and CLOUDFLARE_TOKEN env variables at a later date.
 
@@ -158,7 +157,7 @@ $ terraform apply -target=module.etchosts
 
 
 ### Step 4: Deploy OpenShift
-Fork the [terraform-openshift-deploy](https://github.ibm.com/ncolon/terraform-openshift-deploy) module and include it on your `main.tf` file. It will pull necessary information from the infrastructure module above.
+Fork the [terraform-openshift-deploy](https://github.ibm.com/ncolon/terraform-openshift-deploy) module and include it on your `main.tf` file. It will pull necessary information from the infrastructure module above. Details on the variables used are found in this module's github.
 
 ```terraform
 module "openshift" {
@@ -207,7 +206,7 @@ $ terraform apply -target=module.openshift
 ```
 
 ### Step 5:  Access your OpenShift Cluster
-Fork the [terraform-openshift-kubeconfig](https://github.ibm.com/ncolon/terraform-openshift-kubeconfig) module and include it in your `main.tf` file. It will pull necessary information from the infrastructure module above.
+Fork the [terraform-openshift-kubeconfig](https://github.ibm.com/ncolon/terraform-openshift-kubeconfig) module and include it in your `main.tf` file. It will pull necessary information from the infrastructure module above. Details on the variables used are found in this module's github.
 
 ```terraform
 module "kubeconfig" {
