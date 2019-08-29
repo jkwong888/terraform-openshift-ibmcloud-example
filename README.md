@@ -185,7 +185,8 @@ module "etchosts" {
 
 Register your servers with DNS and generate SSL certificates from LetsEncrypt.
 ```bash
-$ terraform apply -target=module.dnscerts
+$ terraform apply -target=module.dns
+$ terraform apply -target=module.certs
 $ terraform apply -target=module.etchosts
 ```
 
@@ -240,39 +241,5 @@ $ terraform apply -target=module.openshift
 ```
 
 ### Step 5:  Access your OpenShift Cluster
-Fork the [terraform-openshift-kubeconfig](https://github.com/ibm-cloud-architecture/terraform-openshift-kubeconfig) module and include it in your `main.tf` file. It will pull necessary information from the infrastructure module above. Details on the variables used are found in this module's github.
 
-```terraform
-module "kubeconfig" {
-    source                  = "git::ssh://git@github.com/<USERNAME>/terraform-openshift-kubeconfig.git"
-    bastion_ip_address      = "${module.infrastructure.bastion_public_ip}"
-    bastion_private_ssh_key = "${var.private_ssh_key}"
-    master_private_ip       = "${module.infrastructure.master_private_ip}"
-    cluster_name            = "${var.hostname_prefix}-${random_id.tag.hex}"
-    ssh_username            = "${var.ssh_user}"
-}
-```
-
-On your `output.tf` file, add the following to expose the config
-
-```terraform
-output "kubeconfig" {
-    value = "${module.kubeconfig.config}"
-}
-```
-
-```bash
-$ export KUBECONFIG=$(terraform output kubeconfig)
-$ oc get nodes
-NAME                                      STATUS    ROLES     AGE       VERSION
-ocp-ibm-062054dd9a-app-0.ncolon.xyz       Ready     compute   2h        v1.11.0+d4cacc0
-ocp-ibm-062054dd9a-infra-0.ncolon.xyz     Ready     infra     2h        v1.11.0+d4cacc0
-ocp-ibm-062054dd9a-master-0.ncolon.xyz    Ready     master    2h        v1.11.0+d4cacc0
-ocp-ibm-062054dd9a-storage-0.ncolon.xyz   Ready     compute   2h        v1.11.0+d4cacc0
-ocp-ibm-062054dd9a-storage-1.ncolon.xyz   Ready     compute   2h        v1.11.0+d4cacc0
-ocp-ibm-062054dd9a-storage-2.ncolon.xyz   Ready     compute   2h        v1.11.0+d4cacc0
-
-$ oc get routes -n openshift-console
-NAME      HOST/PORT                              PATH      SERVICES   PORT      TERMINATION          WILDCARD
-console   console.apps-ibm-96274e13.ncolon.xyz             console    https     reencrypt/Redirect   None
-```
+Connect to the URL output and log in as the default `admin`/`admin` user.
