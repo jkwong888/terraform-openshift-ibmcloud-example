@@ -40,7 +40,7 @@ locals {
 }
 
 module "rhnregister" {
-  source = "github.com/ibm-cloud-architecture/terraform-openshift-rhnregister.git?ref=v1.0"
+  source = "github.com/ibm-cloud-architecture/terraform-openshift-rhnregister.git?ref=v1.1"
   bastion_ip_address = "${module.infrastructure.bastion_public_ip}"
   private_ssh_key    = "${var.private_ssh_key}"
   ssh_username       = "${var.ssh_user}"
