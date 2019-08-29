@@ -81,9 +81,3 @@
 #   value = "${module.infrastructure.storage_public_ip}"
 # }
 
-#################################################
-# Output OpenShift
-#################################################
-output "kubeconfig" {
-    value = "${module.kubeconfig.config}"
-}

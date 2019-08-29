@@ -1,5 +1,9 @@
-variable "ibm_sl_username" {}
-variable "ibm_sl_api_key" {}
+variable "ibm_sl_username" {
+  default = ""
+}
+variable "ibm_sl_api_key" {
+  default = ""
+}
 variable "datacenter" {}
 
 variable "domain" {
@@ -43,8 +47,12 @@ variable "dnscerts" {
     default = "false"
 }
 
-variable "cloudflare_email" {}
-variable "cloudflare_token" {}
+variable "cloudflare_email" {
+  default = ""
+}
+variable "cloudflare_token" {
+  default = ""
+}
 variable "master_cname" {}
 variable "app_cname" {}
 variable "letsencrypt_email" {}
