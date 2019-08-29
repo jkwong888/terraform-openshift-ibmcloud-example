@@ -81,3 +81,6 @@
 #   value = "${module.infrastructure.storage_public_ip}"
 # }
 
+output "cluster_url" {
+  value = "https://${var.master_cname}-${random_id.tag.hex}.${var.domain}"
+}

@@ -4,9 +4,7 @@ resource "random_id" "tag" {
 }
 
 module "infrastructure" {
-    source                = "github.com/jkwong888/terraform-openshift-infra-ibmcloud-classic.git"
-    ibm_sl_username       = "${var.ibm_sl_username}"
-    ibm_sl_api_key        = "${var.ibm_sl_api_key}"
+    source                = "github.com/jkwong888/terraform-openshift-infra-ibmcloud-classic"
     datacenter            = "${var.datacenter}"
     domain                = "${var.domain}"
     hostname_prefix       = "${var.hostname_prefix}"
@@ -42,7 +40,7 @@ locals {
 }
 
 module "rhnregister" {
-  source = "github.com/jkwong888/terraform-openshift-rhnregister.git"
+  source = "github.com/ibm-cloud-architecture/terraform-openshift-rhnregister.git?ref=v1.0"
   bastion_ip_address = "${module.infrastructure.bastion_public_ip}"
   private_ssh_key    = "${var.private_ssh_key}"
   ssh_username       = "${var.ssh_user}"
@@ -54,7 +52,7 @@ module "rhnregister" {
 }
 
 module "dns" {
-    source                   = "github.com/jkwong888/terraform-dns-cloudflare.git"
+    source                   = "github.com/ibm-cloud-architecture/terraform-dns-cloudflare.git?ref=v1.0"
 
     cloudflare_email         = "${var.cloudflare_email}"
     cloudflare_token         = "${var.cloudflare_token}"
@@ -93,7 +91,7 @@ module "dns" {
 }
 
 module "certs" {
-    source                   = "github.com/jkwong888/terraform-certs-letsencrypt-cloudflare"
+    source                   = "github.com/ibm-cloud-architecture/terraform-certs-letsencrypt-cloudflare?ref=v1.0"
 
     cloudflare_email         = "${var.cloudflare_email}"
     cloudflare_token         = "${var.cloudflare_token}"
@@ -122,7 +120,7 @@ locals {
 }
 
 module "etchosts" {
-    source = "github.com/jkwong888/terraform-dns-etc-hosts.git"
+    source = "github.com/ibm-cloud-architecture/terraform-dns-etc-hosts.git?ref=v1.0"
     bastion_ip_address      = "${module.infrastructure.bastion_public_ip}"
     ssh_user                = "${var.ssh_user}"
     ssh_private_key         = "${var.private_ssh_key}"
@@ -137,7 +135,11 @@ module "etchosts" {
 # Deploy openshift
 # ####################################################
 module "openshift" {
-    source                  = "github.com/jkwong888/terraform-openshift-deploy"
+    dependson = [
+        "${module.rhnregister.registered_resource}"
+    ]
+
+    source                  = "github.com/ibm-cloud-architecture/terraform-openshift-deploy"
     bastion_ip_address      = "${module.infrastructure.bastion_public_ip}"
     bastion_private_ssh_key = "${var.private_ssh_key}"
     master_private_ip       = "${module.infrastructure.master_private_ip}"

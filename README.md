@@ -4,10 +4,29 @@ Sample terraform project leveraging multiple modules to deploy OpenShift into an
 
 In this example, we'll deploy OpenShift 3.11 to IBM Cloud IaaS. `terraform.tfvars` shows variables that can be passed to the whole project to build an OpenShift environment.
 
+Credentials should be specified in environment variables for all of the valid providers.
+
+```bash
+export SL_USERNAME=<username>                  # for IBM Cloud Classic Infrastructure
+export SL_API_KEY=<sl api key>                 # for IBM Cloud Classic Infrastructure
+export BM_API_KEY=<ibm cloud api key>          # for IBM Cloud (deprecated)
+export IC_API_KEY=<ibm cloud api key>          # for IBM Cloud 
+export CLOUDFLARE_EMAIL=<cloudflare email>     # for DNS record creation
+export CLOUDFLARE_TOKEN=<cloudflare api key>   # for DNS record creation
+export CLOUDFLARE_API_KEY=<cloudflare api key> # for letsencrypt dns01 challenge
+```
+
+We have taken a modular approach, some modules may be unnecessary or use a different implementation based on your requirements or available infrastructure.  In this example we use:
+
+* IBM Cloud Classic Infrastructure [https://github.com/jkwong888/terraform-openshift-infra-ibmcloud-classic](https://github.com/ibm-cloud-architecture/terraform-openshift-infra-ibmcloud-classic)
+* Cloudflare DNS [https://github.com/ibm-cloud-architecture/terraform-dns-cloudflare](https://github.com/ibm-cloud-architecture/terraform-dns-cloudflare)
+* LetsEncrypt (with Cloudflare DNS01 challenge) [https://github.com/ibm-cloud-architecture/terraform-certs-letsencrypt-cloudflare](https://github.com/ibm-cloud-architecture/terraform-certs-letsencrypt-cloudflare)
+* Openshift 3.11 Installation [https://github.com/ibm-cloud-architecture/terraform-openshift-deploy](https://github.com/ibm-cloud-architecture/terraform-openshift-deploy)
+
 
 ### Step 1:  Build infrastructure
 
-Fork the [terraform-openshift-ibminfra](https://github.ibm.com/ncolon/terraform-openshift-ibminfra) module and include it in your terraform `main.tf` file.  Details on the variables used are found in this module's github.
+Fork or use as-is the [terraform-openshift-infra-ibmcloud-classic](https://github.com/jkwong888/terraform-openshift-infra-ibmcloud-classic) module and include it in your terraform `main.tf` file.  Details on the variables used are found in this module's github.
 
 ```terraform
 resource "random_id" "tag" {
@@ -15,7 +34,7 @@ resource "random_id" "tag" {
 }
 
 module "infrastructure" {
-  source                = "git::ssh://git@github.ibm.com/<USERNAME>/terraform-openshift-ibminfra.git"
+  source                = "github.com/ibm-cloud-architecture/terraform-openshift-infra-ibmcloud-classic.git"
   ibm_sl_username       = "${var.ibm_sl_username}"
   ibm_sl_api_key        = "${var.ibm_sl_api_key}"
   datacenter            = "${var.datacenter}"
@@ -44,7 +63,7 @@ $ terraform apply -target=module.infrastructure
 
 ### Step 2: Register VMs with RedHat Satelite
 
-Fork the [terraform-openshift-rhnregister](https://github.ibm.com/ncolon/terraform-openshift-rhnregister) module and include it in your `main.tf` file.  It will pull necessary information from the infrastructure module above. Details on the variables used are found in this module's github.
+Fork or use as-is the [terraform-openshift-rhnregister](https://github.com/ibm-cloud-architecture/terraform-openshift-rhnregister) module and include it in your `main.tf` file.  It will pull necessary information from the infrastructure module above. Details on the variables used are found in this module's github.
 
 You need to provide your own RedHat username (`rhn_username`) and password (`rhn_password`), as well as the OpenShift Subscription Pool (`rhn_poolid`) to draw licenses from.
 
@@ -61,7 +80,7 @@ locals {
 }
 
 module "rhnregister" {
-  source = "git::ssh://git@github.ibm.com/<USERNAME>/terraform-openshift-rhnregister.git"
+  source = "github.com/ibm-cloud-architecture/terraform-openshift-rhnregister"
   bastion_ip_address = "${module.infrastructure.bastion_public_ip}"
   private_ssh_key    = "${var.private_ssh_key}"
   ssh_username       = "${var.ssh_user}"
@@ -79,47 +98,62 @@ $ terraform apply -target=module.rhnregister
 ```
 
 ### Step 3: Register your infrastructure DNS.
-OpenShift depends heavily on DNS.  We'll use cloudflare for DNS registrar and Letsencrypt for SSL certificates
 
-Fork the [terraform-openshift-dnscerts](https://github.ibm.com/ncolon/terraform-openshift-ibminfra) and [terraform-dns-etc-hosts](https://github.ibm.com/ncolon/terraform-dns-etc-hosts) and include them in your `main.tf` file. It will pull necessary information from the infrastructure module above. Details on the variables used are found in this module's github.
+OpenShift depends heavily on DNS.  We used cloudflare for DNS registrar and Letsencrypt for SSL certificates
+
+Fork or use as-is the [terraform-dns-cloudflare](https://github.com/ibm-cloud-architecture/terraform-dns-cloudflare), [terraform-certs-letsencrypt-cloudflare](https://github.com/ibm-cloud-architecture/terraform-dns-cloudflare), and [terraform-dns-etc-hosts](https://github.com/ibm-cloud-architecture/terraform-dns-etc-hosts) and include them in your `main.tf` file. It will pull necessary information from the infrastructure module above. Details on the variables used are found in this module's github.
 
 The certificate module currently requires the cloudflare_email and cloudflare_token to be passed thru variables.  It will be converted to CLOUDFLARE_EMAIL and CLOUDFLARE_TOKEN env variables at a later date.
 
 ```terraform
-module "dnscerts" {
-    source                   = "git::ssh://git@github.ibm.com/<USERNAME>/terraform-openshift-dnscerts.git"
-    dnscerts                 = "${var.dnscerts}"
+module "dns" {
+    source                   = "github.com/ibm-cloud-architecture/terraform-dns-cloudflare.git"
+
     cloudflare_email         = "${var.cloudflare_email}"
     cloudflare_token         = "${var.cloudflare_token}"
     cloudflare_zone          = "${var.domain}"
+
+    num_nodes = "${local.rhn_all_count}"
+    num_cnames = 2
+
+    nodes                    = "${zipmap(
+        concat(
+            list(module.infrastructure.bastion_hostname),
+            module.infrastructure.master_hostname,
+            module.infrastructure.app_hostname,
+            module.infrastructure.infra_hostname,
+            module.infrastructure.storage_hostname
+        ),
+        concat(
+            list(module.infrastructure.bastion_public_ip),
+            module.infrastructure.master_private_ip,
+            module.infrastructure.app_private_ip,
+            module.infrastructure.infra_private_ip,
+            module.infrastructure.storage_private_ip
+        )
+    )}"
+
+    cnames                   = "${zipmap(
+        concat(
+            list("${var.master_cname}-${random_id.tag.hex}"),
+            list("*.${var.app_cname}-${random_id.tag.hex}")
+        ),
+        concat(
+            list("${module.infrastructure.public_master_vip}"),
+            list("${module.infrastructure.public_app_vip}")
+        )
+    )}"
+}
+
+module "certs" {
+    source                   = "github.com/ibm-cloud-architecture/terraform-certs-letsencrypt-cloudflare"
+
+    cloudflare_email         = "${var.cloudflare_email}"
+    cloudflare_token         = "${var.cloudflare_token}"
     letsencrypt_email        = "${var.letsencrypt_email}"
-    public_master_vip        = "${module.infrastructure.public_master_vip}"
-    public_app_vip           = "${module.infrastructure.public_app_vip}"
-    master_cname             = "${var.master_cname}-${random_id.tag.hex}"
-    app_cname                = "${var.app_cname}-${random_id.tag.hex}"
-    bastion_public_ip        = "${module.infrastructure.bastion_public_ip}"
-    bastion_hostname         = "${module.infrastructure.bastion_hostname}"
-    master_hostname          = "${module.infrastructure.master_hostname}"
-    app_hostname             = "${module.infrastructure.app_hostname}"
-    infra_hostname           = "${module.infrastructure.infra_hostname}"
-    storage_hostname         = "${module.infrastructure.storage_hostname}"
-    master_private_ip        = "${module.infrastructure.master_private_ip}"
-    app_private_ip           = "${module.infrastructure.app_private_ip}"
-    infra_private_ip         = "${module.infrastructure.infra_private_ip}"
-    storage_private_ip       = "${module.infrastructure.storage_private_ip}"
+
     cluster_cname            = "${var.master_cname}-${random_id.tag.hex}.${var.domain}"
     app_subdomain            = "${var.app_cname}-${random_id.tag.hex}.${var.domain}"
-    letsencrypt_dns_provider = "${var.letsencrypt_dns_provider}"
-    letsencrypt_api_endpoint = "${var.letsencrypt_api_endpoint}"
-    bastion_public_ip        = "${module.infrastructure.bastion_public_ip}"
-    bastion_ssh_key_file     = "${var.private_ssh_key}"
-    ssh_username             = "${var.ssh_user}"
-    master                   = "${var.master}"
-    infra                    = "${var.infra}"
-    worker                   = "${var.worker}"
-    storage                  = "${var.storage}"
-    bastion                  = "${var.bastion}"
-    haproxy                  = "${var.haproxy}"
 }
 
 locals {
@@ -138,7 +172,7 @@ locals {
 }
 
 module "etchosts" {
-    source = "git::ssh://git@github.ibm.com/<USERNAME>/terraform-dns-etc-hosts.git"
+    source = "github.com/ibm-cloud-architecture/terraform-dns-etc-hosts.git"
     bastion_ip_address      = "${module.infrastructure.bastion_public_ip}"
     ssh_user                = "${var.ssh_user}"
     ssh_private_key         = "${var.private_ssh_key}"
@@ -157,11 +191,11 @@ $ terraform apply -target=module.etchosts
 
 
 ### Step 4: Deploy OpenShift
-Fork the [terraform-openshift-deploy](https://github.ibm.com/ncolon/terraform-openshift-deploy) module and include it on your `main.tf` file. It will pull necessary information from the infrastructure module above. Details on the variables used are found in this module's github.
+Fork or use as-is the [terraform-openshift-deploy](https://github.com/ibm-cloud-architecture/terraform-openshift-deploy) module and include it on your `main.tf` file. It will pull necessary information from the infrastructure module above. Details on the variables used are found in this module's github.
 
 ```terraform
 module "openshift" {
-    source                  = "git::ssh://git@github.ibm.com/<USERNAME>/terraform-openshift-deploy.git"
+    source                  = "github.com/ibm-cloud-architecture/terraform-openshift-deploy.git"
     bastion_ip_address      = "${module.infrastructure.bastion_public_ip}"
     bastion_private_ssh_key = "${var.private_ssh_key}"
     master_private_ip       = "${module.infrastructure.master_private_ip}"
@@ -206,11 +240,11 @@ $ terraform apply -target=module.openshift
 ```
 
 ### Step 5:  Access your OpenShift Cluster
-Fork the [terraform-openshift-kubeconfig](https://github.ibm.com/ncolon/terraform-openshift-kubeconfig) module and include it in your `main.tf` file. It will pull necessary information from the infrastructure module above. Details on the variables used are found in this module's github.
+Fork the [terraform-openshift-kubeconfig](https://github.com/ibm-cloud-architecture/terraform-openshift-kubeconfig) module and include it in your `main.tf` file. It will pull necessary information from the infrastructure module above. Details on the variables used are found in this module's github.
 
 ```terraform
 module "kubeconfig" {
-    source                  = "git::ssh://git@github.ibm.com/<USERNAME>/terraform-openshift-kubeconfig.git"
+    source                  = "git::ssh://git@github.com/<USERNAME>/terraform-openshift-kubeconfig.git"
     bastion_ip_address      = "${module.infrastructure.bastion_public_ip}"
     bastion_private_ssh_key = "${var.private_ssh_key}"
     master_private_ip       = "${module.infrastructure.master_private_ip}"

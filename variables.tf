@@ -1,9 +1,3 @@
-variable "ibm_sl_username" {
-  default = ""
-}
-variable "ibm_sl_api_key" {
-  default = ""
-}
 variable "datacenter" {}
 
 variable "domain" {
