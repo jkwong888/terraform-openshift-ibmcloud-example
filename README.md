@@ -34,7 +34,7 @@ resource "random_id" "tag" {
 }
 
 module "infrastructure" {
-  source                = "github.com/ibm-cloud-architecture/terraform-openshift-infra-ibmcloud-classic.git"
+  source                = "github.com/jkwong888/terraform-openshift-infra-ibmcloud-classic.git"
   ibm_sl_username       = "${var.ibm_sl_username}"
   ibm_sl_api_key        = "${var.ibm_sl_api_key}"
   datacenter            = "${var.datacenter}"
